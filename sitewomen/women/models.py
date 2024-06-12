@@ -14,7 +14,7 @@ class Women(models.Model):
     time_create = models.TimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
     is_published = models.BooleanField(default=True)
-    cat = models.ForeignKey("Category", on_delete=models.CASCADE)
+    cat = models.ForeignKey("Category", on_delete=models.CASCADE, related_name="posts")
 
     objects = models.Manager()
     published = PublishedManager()
