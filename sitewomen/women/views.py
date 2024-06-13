@@ -43,7 +43,7 @@ def show_post(request, post_slug):
 
 
 def addpage(request):
-    return HttpResponse("Добавление статьи")
+    return render(request, "women/addpage.html", {"title": "Добавление статьи", "menu": menu})
 
 
 def contact(request):
