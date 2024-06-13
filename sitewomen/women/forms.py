@@ -1,9 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.validators import MinLengthValidator, MaxLengthValidator, BaseValidator
+from django.core.validators import BaseValidator
 from django.utils.deconstruct import deconstructible
 
-from women.models import Category, Husband
+from women.models import Women, Category, Husband
 
 
 @deconstructible
@@ -19,35 +19,24 @@ class RussianValidator(BaseValidator):
             raise ValidationError(self.message, code=self.code)
 
 
-class AddPostForm(forms.Form):
-    title = forms.CharField(
-        max_length=255,
-        min_length=5,
-        label="Title",
-        widget=forms.TextInput(attrs={"class": "form-input"}),
-        # validators=[RussianValidator()],
-        error_messages={
-            "min_length": "Title is too short!",
-            "required": "No title!",
-        },
-    )
-    slug = forms.SlugField(
-        max_length=255,
-        label="URL",
-        validators=[
-            MinLengthValidator(5, message="Minimum 5 symbols"),
-            MaxLengthValidator(100, "Maximum 100 symbols"),
-        ],
-    )
-    content = forms.CharField(widget=forms.Textarea(attrs={"cols": 50, "rows": 5}), required=False, label="Content")
-    is_published = forms.BooleanField(required=False, initial=True, label="Status")
+class AddPostForm(forms.ModelForm):
     cat = forms.ModelChoiceField(queryset=Category.objects.all(), empty_label="Category not chosen", label="Categories")
     husband = forms.ModelChoiceField(
         queryset=Husband.objects.all(), required=False, empty_label="Not married", label="Husband"
     )
 
+    class Meta:
+        model = Women
+        fields = ["title", "slug", "content", "is_published", "cat", "husband", "tags"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-input"}),
+            "content": forms.Textarea(attrs={"cols": 50, "rows": 5}),
+        }
+        labels = {"slug": "URL"}
+
     def clean_title(self):
         title = self.cleaned_data["title"]
-        ALLOWED_CHARS = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщбыъэюя0123456789- "
-        if not (set(title) <= set(ALLOWED_CHARS)):
-            raise ValidationError("Должны присутствовать только русские символы, дефис и пробел.")
+        if len(title) > 50:
+            raise ValidationError("Длина превышает 50 символов")
+
+        return title
