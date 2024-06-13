@@ -1,3 +1,4 @@
+from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.urls import reverse
 
@@ -48,7 +49,15 @@ class PublishedManager(models.Manager):
 
 class Women(models.Model):
     title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True, db_index=True)
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        validators=[
+            MinLengthValidator(5, message="Minimum 5 symbols"),
+            MaxLengthValidator(100, "Maximum 100 symbols"),
+        ],
+    )
     content = models.TextField(blank=True)
     time_create = models.TimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
