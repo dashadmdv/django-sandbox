@@ -29,6 +29,8 @@ class Women(models.Model):
         indexes = [
             models.Index(fields=["-time_create"]),
         ]
+        verbose_name = "Woman"
+        verbose_name_plural = "Women"
 
     def get_absolute_url(self):
         return reverse("post", kwargs={"post_slug": self.slug})
