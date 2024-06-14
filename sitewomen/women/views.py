@@ -14,6 +14,7 @@ class WomenHome(DataMixin, ListView):
     context_object_name = "posts"
     title_page = "Главная страница"
     cat_selected = 0
+    paginate_by = 3
 
     def get_queryset(self):
         return Women.published.all().select_related("cat")
