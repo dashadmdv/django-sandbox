@@ -1,10 +1,10 @@
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import ListView
 
 from women.forms import AddPostForm, UploadFileForm
-from women.models import Women, Category, TagPost, UploadFiles
+from women.models import Women, TagPost, UploadFiles
 
 menu = [
     {"title": "О сайте", "url_name": "about"},
@@ -14,27 +14,39 @@ menu = [
 ]
 
 
-def index(request):
-    posts = Women.published.all().select_related("cat")
+# def index(request):
+#     posts = Women.published.all().select_related("cat")
+#
+#     data = {
+#         "title": "Главная страница",
+#         "menu": menu,
+#         "posts": posts,
+#         "cat_selected": 0,
+#     }
+#     return render(request, "women/index.html", context=data)
 
-    data = {
-        "title": "Главная страница",
-        "menu": menu,
-        "posts": posts,
-        "cat_selected": 0,
-    }
-    return render(request, "women/index.html", context=data)
 
-
-class WomenHome(TemplateView):
+class WomenHome(ListView):
+    model = Women
     template_name = "women/index.html"
-
+    context_object_name = "posts"
     extra_context = {
         "title": "Главная страница",
         "menu": menu,
-        "posts": Women.published.all().select_related("cat"),
         "cat_selected": 0,
     }
+
+    def get_queryset(self):
+        return Women.published.all().select_related("cat")
+
+    # template_name = "women/index.html"
+    #
+    # extra_context = {
+    #     "title": "Главная страница",
+    #     "menu": menu,
+    #     "posts": Women.published.all().select_related("cat"),
+    #     "cat_selected": 0,
+    # }
 
     # def get_context_data(self, **kwargs):
     #     context = super().get_context_data(**kwargs)
@@ -78,27 +90,27 @@ def show_post(request, post_slug):
     return render(request, "women/post.html", data)
 
 
-def addpage(request):
-    if request.method == "POST":
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            #     # print(form.cleaned_data)
-            #     try:
-            #         Women.objects.create(**form.cleaned_data)
-            #         return redirect("home")
-            #     except Exception:
-            #         form.add_error(None, "Error adding post!")
-            form.save()
-            return redirect("home")
-    else:
-        form = AddPostForm()
-
-    data = {
-        "title": "Добавление статьи",
-        "menu": menu,
-        "form": form,
-    }
-    return render(request, "women/addpage.html", data)
+# def addpage(request):
+#     if request.method == "POST":
+#         form = AddPostForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             #     # print(form.cleaned_data)
+#             #     try:
+#             #         Women.objects.create(**form.cleaned_data)
+#             #         return redirect("home")
+#             #     except Exception:
+#             #         form.add_error(None, "Error adding post!")
+#             form.save()
+#             return redirect("home")
+#     else:
+#         form = AddPostForm()
+#
+#     data = {
+#         "title": "Добавление статьи",
+#         "menu": menu,
+#         "form": form,
+#     }
+#     return render(request, "women/addpage.html", data)
 
 
 class AddPage(View):
@@ -132,32 +144,66 @@ def login(request):
     return HttpResponse("Авторизация")
 
 
-def show_category(request, cat_slug):
-    category = get_object_or_404(Category, slug=cat_slug)
-    posts = Women.published.filter(cat_id=category.pk).select_related("cat")
+# def show_category(request, cat_slug):
+#     category = get_object_or_404(Category, slug=cat_slug)
+#     posts = Women.published.filter(cat_id=category.pk).select_related("cat")
+#
+#     data = {
+#         "title": "Отображение по рубрикам",
+#         "menu": menu,
+#         "posts": posts,
+#         "cat_selected": category.pk,
+#     }
+#     return render(request, "women/index.html", context=data)
 
-    data = {
-        "title": "Отображение по рубрикам",
-        "menu": menu,
-        "posts": posts,
-        "cat_selected": category.pk,
-    }
-    return render(request, "women/index.html", context=data)
+
+class WomenCategory(ListView):
+    template_name = "women/index.html"
+    context_object_name = "posts"
+    allow_empty = False
+
+    def get_queryset(self):
+        return Women.published.filter(cat__slug=self.kwargs["cat_slug"]).select_related("cat")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cat = context["posts"][0].cat
+        context["title"] = "Category - " + cat.name
+        context["menu"] = menu
+        context["cat_selected"] = cat.pk
+        return context
 
 
 def page_not_found(request, exception):
     return HttpResponseNotFound("<h1>Страница не найдена</h1>")
 
 
-def show_tag_postlist(request, tag_slug):
-    tag = get_object_or_404(TagPost, slug=tag_slug)
-    posts = tag.tags.filter(is_published=1).select_related("cat")
+# def show_tag_postlist(request, tag_slug):
+#     tag = get_object_or_404(TagPost, slug=tag_slug)
+#     posts = tag.tags.filter(is_published=1).select_related("cat")
+#
+#     data = {
+#         "title": tag.tag,
+#         "menu": menu,
+#         "posts": posts,
+#         "cat_selected": None,
+#     }
+#
+#     return render(request, "women/index.html", context=data)
 
-    data = {
-        "title": tag.tag,
-        "menu": menu,
-        "posts": posts,
-        "cat_selected": None,
-    }
 
-    return render(request, "women/index.html", context=data)
+class TagPostList(ListView):
+    template_name = "women/index.html"
+    context_object_name = "posts"
+    allow_empty = False
+
+    def get_queryset(self):
+        return Women.published.filter(tags__slug=self.kwargs["tag_slug"]).select_related("cat")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tag = TagPost.objects.get(slug=self.kwargs["tag_slug"])
+        context["title"] = "Tag:" + tag.tag
+        context["menu"] = menu
+        context["cat_selected"] = None
+        return context
