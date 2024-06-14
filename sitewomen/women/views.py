@@ -1,9 +1,9 @@
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, FormView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
-from women.forms import UploadFileForm, AddPostForm
+from women.forms import UploadFileForm
 from women.models import Women, TagPost, UploadFiles
 
 menu = [
@@ -129,18 +129,37 @@ class ShowPost(DetailView):
 #     return render(request, "women/addpage.html", data)
 
 
-class AddPage(FormView):
-    form_class = AddPostForm
+class AddPage(CreateView):
+    # form_class = AddPostForm
+    model = Women
+    fields = "__all__"
     template_name = "women/addpage.html"
-    success_url = reverse_lazy("home")
+    # success_url = reverse_lazy("home")
     extra_context = {
         "title": "Добавление статьи",
         "menu": menu,
     }
 
-    def form_valid(self, form):
-        form.save()
-        return super().form_valid(form)
+
+class UpdatePage(UpdateView):
+    model = Women
+    fields = ["title", "content", "photo", "is_published", "cat"]
+    template_name = "women/addpage.html"
+    success_url = reverse_lazy("home")
+    extra_context = {
+        "title": "Редактирование статьи",
+        "menu": menu,
+    }
+
+
+class DeletePage(DeleteView):
+    model = Women
+    template_name = "women/addpage.html"
+    success_url = reverse_lazy("home")
+    extra_context = {
+        "title": "Удаление статьи",
+        "menu": menu,
+    }
 
 
 # class AddPage(View):
