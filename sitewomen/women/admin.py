@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.utils.safestring import mark_safe
 
 from women.models import Women, Category
 
@@ -22,13 +23,13 @@ class MarriedFilter(admin.SimpleListFilter):
 
 @admin.register(Women)
 class WomenAdmin(admin.ModelAdmin):
-    fields = ["title", "content", "slug", "cat", "husband", "tags"]
+    fields = ["title", "content", "photo", "post_photo", "slug", "cat", "husband", "tags"]
     # exclude = ["tags", "is_published"]
-    # readonly_fields = ["slug"]
+    readonly_fields = ["post_photo"]
     prepopulated_fields = {"slug": ("title",)}
     # filter_horizontal = ["tags"]
     filter_vertical = ["tags"]
-    list_display = ("title", "time_create", "is_published", "cat", "brief_info")
+    list_display = ("title", "post_photo", "time_create", "is_published", "cat")
     list_display_links = ("title",)
     ordering = ["-time_create", "title"]
     list_editable = ["is_published"]
@@ -36,10 +37,13 @@ class WomenAdmin(admin.ModelAdmin):
     actions = ["set_published", "set_draft"]
     search_fields = ["title", "cat__name"]
     list_filter = [MarriedFilter, "cat__name", "is_published"]
+    save_on_top = True
 
-    @admin.display(description="Brief description", ordering="content")
-    def brief_info(self, women: Women):
-        return f"Описание {len(women.content)} символов."
+    @admin.display(description="Image", ordering="content")
+    def post_photo(self, women: Women):
+        if women.photo:
+            return mark_safe(f"<img src='{women.photo.url}' width=50>")
+        return "Without photo"
 
     @admin.action(description="Publish")
     def set_published(self, request, queryset):
