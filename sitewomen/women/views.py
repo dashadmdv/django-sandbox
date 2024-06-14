@@ -1,7 +1,7 @@
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 
 from women.forms import AddPostForm, UploadFileForm
 from women.models import Women, TagPost, UploadFiles
@@ -79,15 +79,31 @@ def about(request):
     return render(request, "women/about.html", data)
 
 
-def show_post(request, post_slug):
-    post = get_object_or_404(Women, slug=post_slug)
-    data = {
-        "title": post.title,
-        "menu": menu,
-        "post": post,
-        "cat_selected": 1,
-    }
-    return render(request, "women/post.html", data)
+# def show_post(request, post_slug):
+#     post = get_object_or_404(Women, slug=post_slug)
+#     data = {
+#         "title": post.title,
+#         "menu": menu,
+#         "post": post,
+#         "cat_selected": 1,
+#     }
+#     return render(request, "women/post.html", data)
+
+
+class ShowPost(DetailView):
+    # model = Women
+    template_name = "women/post.html"
+    slug_url_kwarg = "post_slug"
+    context_object_name = "post"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = context["post"].title
+        context["menu"] = menu
+        return context
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg])
 
 
 # def addpage(request):
