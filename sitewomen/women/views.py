@@ -5,6 +5,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 
 from women.forms import UploadFileForm
 from women.models import Women, TagPost, UploadFiles
+from women.utils import DataMixin
 
 menu = [
     {"title": "О сайте", "url_name": "about"},
@@ -26,15 +27,18 @@ menu = [
 #     return render(request, "women/index.html", context=data)
 
 
-class WomenHome(ListView):
+class WomenHome(DataMixin, ListView):
     model = Women
     template_name = "women/index.html"
     context_object_name = "posts"
-    extra_context = {
-        "title": "Главная страница",
-        "menu": menu,
-        "cat_selected": 0,
-    }
+    title_page = "Главная страница"
+    cat_selected = 0
+
+    # extra_context = {
+    #     "title": "Главная страница",
+    #     "menu": menu,
+    #     "cat_selected": 0,
+    # }
 
     def get_queryset(self):
         return Women.published.all().select_related("cat")
@@ -90,7 +94,7 @@ def about(request):
 #     return render(request, "women/post.html", data)
 
 
-class ShowPost(DetailView):
+class ShowPost(DataMixin, DetailView):
     # model = Women
     template_name = "women/post.html"
     slug_url_kwarg = "post_slug"
@@ -98,9 +102,7 @@ class ShowPost(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = context["post"].title
-        context["menu"] = menu
-        return context
+        return self.get_mixin_context(context, title=context["post"].title)
 
     def get_object(self, queryset=None):
         return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg])
@@ -129,37 +131,28 @@ class ShowPost(DetailView):
 #     return render(request, "women/addpage.html", data)
 
 
-class AddPage(CreateView):
+class AddPage(DataMixin, CreateView):
     # form_class = AddPostForm
     model = Women
     fields = "__all__"
     template_name = "women/addpage.html"
+    title_page = "Добавление статьи"
     # success_url = reverse_lazy("home")
-    extra_context = {
-        "title": "Добавление статьи",
-        "menu": menu,
-    }
 
 
-class UpdatePage(UpdateView):
+class UpdatePage(DataMixin, UpdateView):
     model = Women
     fields = ["title", "content", "photo", "is_published", "cat"]
     template_name = "women/addpage.html"
     success_url = reverse_lazy("home")
-    extra_context = {
-        "title": "Редактирование статьи",
-        "menu": menu,
-    }
+    title_page = "Редактирование статьи"
 
 
-class DeletePage(DeleteView):
+class DeletePage(DataMixin, DeleteView):
     model = Women
     template_name = "women/addpage.html"
     success_url = reverse_lazy("home")
-    extra_context = {
-        "title": "Удаление статьи",
-        "menu": menu,
-    }
+    title_page = "Удаление статьи"
 
 
 # class AddPage(View):
@@ -206,7 +199,7 @@ def login(request):
 #     return render(request, "women/index.html", context=data)
 
 
-class WomenCategory(ListView):
+class WomenCategory(DataMixin, ListView):
     template_name = "women/index.html"
     context_object_name = "posts"
     allow_empty = False
@@ -217,10 +210,7 @@ class WomenCategory(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         cat = context["posts"][0].cat
-        context["title"] = "Category - " + cat.name
-        context["menu"] = menu
-        context["cat_selected"] = cat.pk
-        return context
+        return self.get_mixin_context(context, title="Category - " + cat.name, cat_selected=cat.pk)
 
 
 def page_not_found(request, exception):
@@ -241,7 +231,7 @@ def page_not_found(request, exception):
 #     return render(request, "women/index.html", context=data)
 
 
-class TagPostList(ListView):
+class TagPostList(DataMixin, ListView):
     template_name = "women/index.html"
     context_object_name = "posts"
     allow_empty = False
@@ -252,7 +242,4 @@ class TagPostList(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tag = TagPost.objects.get(slug=self.kwargs["tag_slug"])
-        context["title"] = "Tag:" + tag.tag
-        context["menu"] = menu
-        context["cat_selected"] = None
-        return context
+        return self.get_mixin_context(context, title="Tag:" + tag.tag)
